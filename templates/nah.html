@@ -1,0 +1,20 @@
+<html>
+      {% extends 'template.html' %}
+      
+      <body>
+            {% block content %}
+      
+            <div class="container">
+                  <h1>Baby's First Flask Application</h1>
+                  <img src='static/img/forrest.jpg' width=500px class="container-item">
+
+                  <br>
+
+                  <a href='{{  url_for("miles") }}' class="btn btn-primary container-item">
+                        See Miles Logged
+                  </a>
+            </div>
+      
+            {% endblock %}
+      </body>
+</html>

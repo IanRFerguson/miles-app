@@ -1,0 +1,25 @@
+/* All the Good Shit */
+
+/* Global */
+body {
+      text-align: center;
+      padding: 10px;
+}
+
+.container {
+      padding-top: 50px;
+}
+
+.container-item {
+      position: relative;
+      padding: 10px;
+}
+
+table {
+      margin-left: auto;
+      margin-right: auto;
+}
+
+.milesPlot {
+      padding: 10px;
+}
