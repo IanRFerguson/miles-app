@@ -99,19 +99,14 @@ def sql_init():
             sys.exit(1)
 
       cur = conn.cursor()                                               # Define cursor for DB executions
-      query = "SELECT created FROM texts"                               # Cast received dates to list
-      cur.execute(query)
-      query_dates = [str(x[0]) for x in cur.fetchall()]
-
+     
       for text in fetch_sms():
 
-            temp = [text.date_created, text.to,                         # Values derived from text class
-                   text.from_, text.body] 
+            if text.from_ == '+17038190646':
+                  temp = [text.date_created, text.to,                         # Values derived from text class
+                        text.from_, text.body] 
 
-            if str(text.date_created) in query_dates:                   # Only push to table if key doesn't exist
-                 continue
-            else:
-                 cur.execute('''
+                  cur.execute('''
                   INSERT OR IGNORE INTO texts
                   VALUES (?, ?, ?, ?)''', temp)
 
@@ -129,9 +124,7 @@ def compileMiles():
       query = '''
       SELECT *
       FROM texts
-      WHERE sent_from = '+17038190646'
-      AND body <> 'Miles'
-      AND body <> 'Hi';
+      WHERE sent_from = '+17038190646';
       '''
 
       # Determine if value can be cast to numeric type or not
@@ -223,7 +216,7 @@ def milesRun():
       """
 
       output = frames()
-      return round(sum(output['miles']))
+      return round(sum(output['miles']), 2)
 
 
 def plotYeah():
@@ -262,3 +255,10 @@ def plotYeah():
       plt.xlabel('')
       plt.ylabel('Miles Run')
       plt.savefig('./static/plots/MONTHS.png')
+
+      # BY DOW
+      plt.figure(figsize=(15,6))
+      sns.violinplot(data=output, x='DOW', y='miles', palette='Spectral')
+      plt.xlabel('')
+      plt.ylabel('Miles Run')
+      plt.savefig('./static/plots/DOW.png')
