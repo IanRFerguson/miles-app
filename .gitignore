@@ -2,3 +2,7 @@ twilio.json
 env/
 dev.ipynb
 __pycache__/
+.ipynb_checkpoints/99-Sandbox-checkpoint.ipynb
+twilio-database.db
+99-Sandbox.ipynb
+twilio-database.db
