@@ -1,26 +1,30 @@
 <html>
-      {% extends 'template.html' %}
 
-      <body>
-            
-            {% block content %}
+    {% extends 'template.html' %}
 
-            <h1>Running Hard or Hardly Running?</h1>
+    <body>
 
-            <div class='milesPlot'>
-                  <img src='./static/plots/MILES.png' width=1000px>
-            </div>
+        {% block content %}
 
-            <div class='milesPlot'>
-                  <img src='./static/plots/MONTHS.png' width=1000px>
-            </div>
+        <h1>Running Laps</h1>
 
-            <div class='milesPlot'>
-                  <img src='./static/plots/DOW.png' width=1000px>
-            </div>
-            
+        <img src="../static/img/forrest.jpg" width=50%>
 
-            {% endblock %}
+        <div class="yearByYear">
+            <h3>
+                <a href="{{ url_for('miles_2021') }}">
+                    2021
+                </a>
+            </h3>
+            <h3>
+                <a href="{{ url_for('miles_2022') }}">
+                    2022
+                </a>
+            </h3>
+        </div>
 
-      </body>
+        {% endblock %}
+
+    </body>
+
 </html>
