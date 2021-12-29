@@ -1,0 +1,17 @@
+<html>
+      {% extends 'template.html' %}
+      <body>
+            {% block content %}
+            <h1>Running Hard or Hardly Running?</h1>
+            <div class='milesPlot'>
+                  <img src='./static/{}/plots/MILES.png' width=1000px>
+            </div>
+            <div class='milesPlot'>
+                  <img src='./static/{}/plots/MONTHS.png' width=1000px>
+            </div>
+            <div class='milesPlot'>
+                  <img src='./static/{}/plots/DOW.png' width=1000px>
+            </div>
+            {% endblock %}
+      </body>
+</html>
