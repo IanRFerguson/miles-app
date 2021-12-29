@@ -1,0 +1,30 @@
+<html>
+      {% extends 'template.html' %}
+
+      <body>
+            
+            {% block content %}
+
+            <h1 class="page-header">
+                  <a href="{{ url_for('index') }}">
+                        Running Hard or Hardly Running?
+                  </a>
+            </h1>
+
+            <div class='milesPlot'>
+                  <img src='./static/2022/plots/MILES.png' width=1000px>
+            </div>
+
+            <div class='milesPlot'>
+                  <img src='./static/2022/plots/MONTHS.png' width=1000px>
+            </div>
+
+            <div class='milesPlot'>
+                  <img src='./static/2022/plots/DOW.png' width=1000px>
+            </div>
+            
+
+            {% endblock %}
+
+      </body>
+</html>
