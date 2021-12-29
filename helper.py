@@ -2,24 +2,28 @@
 
 """
 Helper functions galore!
+
+Dev goals
+* Landing page should give year options
+
 """
 
 # ------- Imports
 from flask import request
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
-import json
-from dotenv import load_dotenv
-import sqlite3
-import sys
+import json, sqlite3, sys, os, pathlib
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
 from datetime import datetime
 import pandas as pd
 
-# ------------ Twilio
-def twilioSetup():
+# ----- Environment
+
+this_year = datetime.now().strftime("%Y")
+
+def twilio_setup():
       """
       Returns everything you need to connect to Twilio API
 
@@ -31,9 +35,21 @@ def twilioSetup():
             return temp['sid'], temp['auth'], temp['my_number']
 
 
-TWIL_account, TWIL_auth, TWIL_number = twilioSetup()                    # SID and authoriziation from Twilio
+def environment_setup():
+      """
+      Sets up routing for plot and CSV output
+      """
+
+      temp_path = os.path.join(f'./static/{this_year}/plots')
+
+      if not os.path.exists(temp_path):
+            pathlib.Path(temp_path).mkdir(parents=True, exist_ok=True)
+
+
+TWIL_account, TWIL_auth, TWIL_number = twilio_setup()                   # SID and authoriziation from Twilio
 API = Client(TWIL_account, TWIL_auth)                                   # Instantiate Twilio API
 
+# ----- App Functions
 
 def fetch_sms():
       return API.messages.stream()                                      # Returns all texts to/from my_number
@@ -98,7 +114,7 @@ def sql_init():
             print('\nIssue connecting to database:\t\t{}'.format(e))
             sys.exit(1)
 
-      cur = conn.cursor()                                               # Define cursor for DB executions
+      cur = conn.cursor()                                                     # Define cursor for DB executions
      
       for text in fetch_sms():
 
@@ -114,7 +130,7 @@ def sql_init():
       conn.close()
 
 
-def compileMiles():
+def compile_miles(YEARVALUE=this_year):
       """
       * Merges SQLite databse with local CSV (miles logged before app)
       * Could this be written more effectively? For sure!
@@ -140,32 +156,35 @@ def compileMiles():
             # Read in query as a Pandas DataFrame object
             data = pd.read_sql(query, connect)
 
-            # True/False column isolates numeric entries
-            data['numeric'] = data['body'].apply(lambda x: numericCheck(x))
-            data = data[data['numeric'] == True].reset_index(drop=True)
+      # Boolean column isolates numeric entries
+      data['numeric'] = data['body'].apply(lambda x: numericCheck(x))
+      data = data[data['numeric'] == True].reset_index(drop=True)
 
-            # Convert created column to datetime format
-            data['created'] = pd.to_datetime(data['created'])
-            data['created'] = data['created'].apply(lambda x: datetime.strftime(x, '%Y-%m-%d'))
+      # Convert created column to datetime format
+      data['created'] = pd.to_datetime(data['created'])
+      data['created'] = data['created'].apply(lambda x: datetime.strftime(x, '%Y-%m-%d'))
 
-            # Align DB table with local CSV for continuity
-            data.rename(columns={'created': 'dates', 'body': 'miles'}, inplace=True)
-            data = data.loc[:, ['dates', 'miles']]
+      data['year_value'] = data['created'].apply(lambda x: int(x.split('-')[0]))
+      data = data[data['year_value'] == int(YEARVALUE)]
 
-            # Isolate day of week and month
-            data['DOW'] = data['dates'].apply(lambda x: datetime.strftime(pd.to_datetime(x), '%A'))
-            data['month'] = data['dates'].apply(lambda x: datetime.strftime(pd.to_datetime(x), '%B'))
+      # Align DB table with local CSV for continuity
+      data.rename(columns={'created': 'dates', 'body': 'miles'}, inplace=True)
+      data = data.loc[:, ['dates', 'miles']]
 
-            # Read in local CSV and perform similar operations
-            miles = pd.read_csv('./Raw.csv')
-            miles['dates'] = miles['dates'].apply(lambda x: datetime.strptime(x, '%A %B %d'))
-            miles['dates'] = miles['dates'].apply(lambda x: x.replace(2021))
+      # Isolate day of week and month
+      data['DOW'] = data['dates'].apply(lambda x: datetime.strftime(pd.to_datetime(x), '%A'))
+      data['month'] = data['dates'].apply(lambda x: datetime.strftime(pd.to_datetime(x), '%B'))
 
-            # Concatenate the two dataframes
-            output = pd.concat([miles, data])
-            output['dates'] = pd.to_datetime(output['dates'])
-            output = output.sort_values(by='dates').reset_index(drop=True)
-            return output
+      # Read in local CSV and perform similar operations
+      miles = pd.read_csv(f'./static/{this_year}/Raw.csv')
+      miles['dates'] = miles['dates'].apply(lambda x: datetime.strptime(x, '%A %B %d'))
+      miles['dates'] = miles['dates'].apply(lambda x: x.replace(2021))
+
+      # Concatenate the two dataframes
+      output = pd.concat([miles, data])
+      output['dates'] = pd.to_datetime(output['dates'])
+      output = output.sort_values(by='dates').reset_index(drop=True)
+      return output
 
 
 # ------- Plots!
@@ -176,7 +195,7 @@ def frames():
       """
 
       # Instantiate miles run and cast miles to numeric
-      MTD = compileMiles()
+      MTD = compile_miles()
       MTD['miles'] = pd.to_numeric(MTD['miles'])
 
       # Determines if run was the longest of the year
@@ -247,18 +266,18 @@ def plotYeah():
       plt.xlabel('')
       plt.ylabel('Miles Run', fontsize=12)
       plt.legend('')
-      plt.savefig('./static/plots/MILES.png')
+      plt.savefig(f'./static/{this_year}/plots/MILES.png')
 
       # BY MONTH
       plt.figure(figsize=(15, 6))
       sns.violinplot(data=output, x="month", y="miles", palette='Spectral')
       plt.xlabel('')
       plt.ylabel('Miles Run')
-      plt.savefig('./static/plots/MONTHS.png')
+      plt.savefig(f'./static/{this_year}/plots/MONTHS.png')
 
       # BY DOW
       plt.figure(figsize=(15,6))
       sns.violinplot(data=output, x='DOW', y='miles', palette='Spectral')
       plt.xlabel('')
       plt.ylabel('Miles Run')
-      plt.savefig('./static/plots/DOW.png')
+      plt.savefig(f'./static/{this_year}/plots/DOW.png')
