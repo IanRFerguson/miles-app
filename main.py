@@ -3,24 +3,23 @@
 """
 About this App
 
-* This is a programmatic way to keep track of how far I run in 2021
+* This is a programmatic way to keep track of how far I run every year
 * Incoming texts are funneled to SQLite Database
 * Miles run are plotted and displayed on landing page of app
 
 IRF
 """
 
-# --------- Imports
+# ----- Imports
 from flask import Flask, render_template, redirect, url_for, request
 from helper import *
 
 app = Flask(__name__)
-load_dotenv()
 sql_init()
 plotYeah()
 
 
-# --------- App Setup
+# ----- App Setup
 
 """
 Index (root) => Renders plots of miiles run, derived from 
@@ -36,8 +35,21 @@ def index():
 @app.route('/sms', methods=['GET', 'POST'])
 def sms():
       return response_sms(request.values.get('Body'))
-      
 
-# ---------- Run App
+
+# ---- Year by Year
+
+@app.route('/2021', methods=['GET', 'POST'])
+def miles_2021():
+      sms = fetch_sms()
+      return render_template('miles_2021.html', sms=sms)
+
+
+@app.route('/2022', methods=['GET', 'POST'])
+def miles_2022():
+      sms = fetch_sms()
+      return render_template('miles_2022.html', sms=sms)
+
+
 if __name__ == "__main__":
       app.run(debug=True)
