@@ -175,13 +175,20 @@ def compile_miles(YEARVALUE=this_year):
       data['DOW'] = data['dates'].apply(lambda x: datetime.strftime(pd.to_datetime(x), '%A'))
       data['month'] = data['dates'].apply(lambda x: datetime.strftime(pd.to_datetime(x), '%B'))
 
-      # Read in local CSV and perform similar operations
-      miles = pd.read_csv(f'./static/{this_year}/Raw.csv')
-      miles['dates'] = miles['dates'].apply(lambda x: datetime.strptime(x, '%A %B %d'))
-      miles['dates'] = miles['dates'].apply(lambda x: x.replace(2021))
 
-      # Concatenate the two dataframes
-      output = pd.concat([miles, data])
+      try:
+            # Read in local CSV and perform similar operations
+            miles = pd.read_csv(f'./static/{this_year}/Raw.csv')
+            miles['dates'] = miles['dates'].apply(lambda x: datetime.strptime(x, '%A %B %d'))
+            miles['dates'] = miles['dates'].apply(lambda x: x.replace(2021))
+
+            # Concatenate the two dataframes
+            output = pd.concat([miles, data])
+      
+      except:
+            print("No CSV to use - no biggie")
+            output = data
+            
       output['dates'] = pd.to_datetime(output['dates'])
       output = output.sort_values(by='dates').reset_index(drop=True)
       return output
