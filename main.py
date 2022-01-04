@@ -10,13 +10,24 @@ About this App
 IRF
 """
 
+"""
+Running to-do
+
+* Miles to date under hyperlink header ... consider h3 size
+* More customized text responses (every 100 miles or so)
+"""
+
 # ----- Imports
 from flask import Flask, render_template, redirect, url_for, request
 from helper import *
 
 app = Flask(__name__)
 sql_init()
-plotYeah()
+
+try:
+      plotYeah()
+except:
+      print("Still compiling miles to plot...")
 
 
 # ----- App Setup
@@ -42,13 +53,15 @@ def sms():
 @app.route('/2021', methods=['GET', 'POST'])
 def miles_2021():
       sms = fetch_sms()
-      return render_template('miles_2021.html', sms=sms)
+      mtd = milesRun(YEARVALUE=2021)
+      return render_template('miles_2021.html', sms=sms, mtd=mtd)
 
 
 @app.route('/2022', methods=['GET', 'POST'])
 def miles_2022():
       sms = fetch_sms()
-      return render_template('miles_2022.html', sms=sms)
+      mtd = milesRun(YEARVALUE=2022)
+      return render_template('miles_2022.html', sms=sms, mtd=mtd)
 
 
 if __name__ == "__main__":

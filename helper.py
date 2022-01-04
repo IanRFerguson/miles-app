@@ -1,13 +1,5 @@
 #!/bin/python3
 
-"""
-Helper functions galore!
-
-Dev goals
-* Landing page should give year options
-
-"""
-
 # ------- Imports
 from flask import request
 from twilio.rest import Client
@@ -47,6 +39,7 @@ def environment_setup():
 
 
 TWIL_account, TWIL_auth, TWIL_number = twilio_setup()                   # SID and authoriziation from Twilio
+environment_setup()
 API = Client(TWIL_account, TWIL_auth)                                   # Instantiate Twilio API
 
 # ----- App Functions
@@ -77,7 +70,12 @@ def response_sms(INCOMING):
       if checkForCast(body):
             resp = MessagingResponse()
             val = milesRun()
-            resp.message(f"That's what's up! You've run {val} miles this year big homie")
+
+            if (round(val) % 100) < 10:
+                  confetti_cake = (round(val) / 100) * 100
+                  resp.message(f"{confetti_cake} miles already? That's {val} miles on the year dude, you're crushing it!")
+            else:
+                  resp.message(f"That's what's up! You've run {val} miles this year big homie")
             return str(resp)
       
       elif body.upper() == "MILES":
@@ -178,15 +176,15 @@ def compile_miles(YEARVALUE=this_year):
 
       try:
             # Read in local CSV and perform similar operations
-            miles = pd.read_csv(f'./static/{this_year}/Raw.csv')
+            miles = pd.read_csv(f'./static/{YEARVALUE}/Raw.csv')
             miles['dates'] = miles['dates'].apply(lambda x: datetime.strptime(x, '%A %B %d'))
             miles['dates'] = miles['dates'].apply(lambda x: x.replace(2021))
 
             # Concatenate the two dataframes
             output = pd.concat([miles, data])
       
-      except:
-            print("No CSV to use - no biggie")
+      except Exception as e:
+            print(f"{e} ... moving on anyway")
             output = data
             
       output['dates'] = pd.to_datetime(output['dates'])
@@ -195,14 +193,14 @@ def compile_miles(YEARVALUE=this_year):
 
 
 # ------- Plots!
-def frames():
+def frames(YEARVALUE):
       """
       Returns a DataFrame object wtih *all* dates so far this year
       Dates where I didn't run will show 0
       """
 
       # Instantiate miles run and cast miles to numeric
-      MTD = compile_miles()
+      MTD = compile_miles(YEARVALUE=YEARVALUE)
       MTD['miles'] = pd.to_numeric(MTD['miles'])
 
       # Determines if run was the longest of the year
@@ -236,27 +234,27 @@ def frames():
       return AllDates(MTD)
 
 
-def milesRun():
+def milesRun(YEARVALUE=this_year):
       """
       Returns total # of miles run this year
       """
 
-      output = frames()
+      output = frames(YEARVALUE=YEARVALUE)
       return round(sum(output['miles']), 2)
 
 
-def plotYeah():
+def plotYeah(YEARVALUE=this_year):
       """
       Generates plots of miles run and saves them locally
       These are displayed on landing page
       """
 
-      output = frames()
+      output = frames(YEARVALUE=YEARVALUE)
 
       def generateSubtitle(X):
           total_run = round(sum(X['miles']), 2)
-          today = datetime.now().strftime('%b-%d')
-          return "Updated {} | Total Miles: {}".format(today, total_run)
+          today = datetime.now().strftime('%B %d, %Y')
+          return "Updated {}".format(today)
 
       dateForm = mdates.DateFormatter('%m-%d')
 
@@ -265,7 +263,12 @@ def plotYeah():
       g = sns.barplot(data=output, x='dates', y='miles', hue='max_miles')
       ticks = g.get_xticks()
       labels = g.get_xticklabels()
-      n = len(ticks) // 20
+
+      try:
+            n = len(ticks) // 20
+      except:
+            n = len(ticks)
+
       g.set_xticks(ticks[::n])
       g.set_xticklabels(labels[::n])
       plt.title(generateSubtitle(output), fontsize=18)
@@ -273,18 +276,18 @@ def plotYeah():
       plt.xlabel('')
       plt.ylabel('Miles Run', fontsize=12)
       plt.legend('')
-      plt.savefig(f'./static/{this_year}/plots/MILES.png')
+      plt.savefig(f'./static/{YEARVALUE}/plots/MILES.png')
 
       # BY MONTH
       plt.figure(figsize=(15, 6))
       sns.violinplot(data=output, x="month", y="miles", palette='Spectral')
       plt.xlabel('')
       plt.ylabel('Miles Run')
-      plt.savefig(f'./static/{this_year}/plots/MONTHS.png')
+      plt.savefig(f'./static/{YEARVALUE}/plots/MONTHS.png')
 
       # BY DOW
       plt.figure(figsize=(15,6))
       sns.violinplot(data=output, x='DOW', y='miles', palette='Spectral')
       plt.xlabel('')
       plt.ylabel('Miles Run')
-      plt.savefig(f'./static/{this_year}/plots/DOW.png')
+      plt.savefig(f'./static/{YEARVALUE}/plots/DOW.png')
