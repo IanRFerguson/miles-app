@@ -1,6 +1,4 @@
 #!/bin/python3
-
-# ------- Imports
 from flask import request
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
@@ -11,7 +9,10 @@ import seaborn as sns
 from datetime import datetime
 import pandas as pd
 
-# ----- Environment
+
+##########
+
+
 
 this_year = datetime.now().strftime("%Y")
 
@@ -27,6 +28,7 @@ def twilio_setup():
             return temp['sid'], temp['auth'], temp['my_number']
 
 
+
 def environment_setup():
       """
       Sets up routing for plot and CSV output
@@ -38,14 +40,24 @@ def environment_setup():
             pathlib.Path(temp_path).mkdir(parents=True, exist_ok=True)
 
 
-TWIL_account, TWIL_auth, TWIL_number = twilio_setup()                   # SID and authoriziation from Twilio
-environment_setup()
-API = Client(TWIL_account, TWIL_auth)                                   # Instantiate Twilio API
+# SID and authoriziation from Twilio
+TWIL_account, TWIL_auth, TWIL_number = twilio_setup()    
 
-# ----- App Functions
+# Instantiate Twilio API
+API = Client(TWIL_account, TWIL_auth)                                   
+
+
+#####
+
+
 
 def fetch_sms():
-      return API.messages.stream()                                      # Returns all texts to/from my_number
+      """
+      Returns all texts to/from my_number
+      """
+      
+      return API.messages.stream()                                      
+
 
 
 def response_sms(INCOMING):
@@ -58,14 +70,19 @@ def response_sms(INCOMING):
       
       body = INCOMING
 
-      # Determine if text is able to be cast to float
       def checkForCast(X):
+            """
+            Determine if text is able to be cast to float
+            """
+
             try:
                   float(body)
                   return True
 
             except ValueError:
                   return False
+
+      ###
 
       if checkForCast(body):
             resp = MessagingResponse()
@@ -76,18 +93,22 @@ def response_sms(INCOMING):
                   resp.message(f"{confetti_cake} miles already? That's {val} miles on the year dude, you're crushing it!")
             else:
                   resp.message(f"That's what's up! You've run {val} miles this year big homie")
+
             return str(resp)
       
       elif body.upper() == "MILES":
             resp = MessagingResponse()
             resp.message("Respond to this text with your miles run today\n\nKeep up the good work dude!")
+            
             return str(resp)
 
       else:
             return "Ok"
 
+
+#####
             
-# ------- Tables
+
 def sql_init():
       """
       * Creates DB table if it doesn't exist
@@ -104,6 +125,8 @@ def sql_init():
             body TEXT)
             ''')
 
+      ###
+
       try:
             # Connect to DB
             conn = sqlite3.connect('twilio-database.db')
@@ -112,10 +135,11 @@ def sql_init():
             print('\nIssue connecting to database:\t\t{}'.format(e))
             sys.exit(1)
 
+      ###
+
       cur = conn.cursor()                                                     # Define cursor for DB executions
      
       for text in fetch_sms():
-
             if text.from_ == '+17038190646':
                   temp = [text.date_created, text.to,                         # Values derived from text class
                         text.from_, text.body] 
@@ -126,6 +150,7 @@ def sql_init():
 
       conn.commit()
       conn.close()
+
 
 
 def compile_miles(YEARVALUE=this_year):
@@ -141,18 +166,27 @@ def compile_miles(YEARVALUE=this_year):
       WHERE sent_from = '+17038190646';
       '''
 
-      # Determine if value can be cast to numeric type or not
+      ###
+
       def numericCheck(x):
+            """
+            Determine if value can be cast to numeric type or not
+            """
+
             try:
                   float(x)
                   return True
+            
             except:
                   return False
 
+      ###
 
       with sqlite3.connect('./twilio-database.db') as connect:
             # Read in query as a Pandas DataFrame object
             data = pd.read_sql(query, connect)
+
+      ###
 
       # Boolean column isolates numeric entries
       data['numeric'] = data['body'].apply(lambda x: numericCheck(x))
@@ -173,6 +207,7 @@ def compile_miles(YEARVALUE=this_year):
       data['DOW'] = data['dates'].apply(lambda x: datetime.strftime(pd.to_datetime(x), '%A'))
       data['month'] = data['dates'].apply(lambda x: datetime.strftime(pd.to_datetime(x), '%B'))
 
+      ###
 
       try:
             # Read in local CSV and perform similar operations
@@ -189,10 +224,13 @@ def compile_miles(YEARVALUE=this_year):
             
       output['dates'] = pd.to_datetime(output['dates'])
       output = output.sort_values(by='dates').reset_index(drop=True)
+      
       return output
 
 
-# ------- Plots!
+#####
+
+
 def frames(YEARVALUE):
       """
       Returns a DataFrame object wtih *all* dates so far this year
@@ -202,6 +240,8 @@ def frames(YEARVALUE):
       # Instantiate miles run and cast miles to numeric
       MTD = compile_miles(YEARVALUE=YEARVALUE)
       MTD['miles'] = pd.to_numeric(MTD['miles'])
+
+      ###
 
       # Determines if run was the longest of the year
       def maxMiles(x):
@@ -218,29 +258,36 @@ def frames(YEARVALUE):
       def generateNonsense(X):
             nonsense = pd.DataFrame(columns=['dates', 'miles'])
             nonsense['dates'] = xAsDates(X)
+           
             return nonsense
 
       # Merge nonsene DF with real DF + only keep values that are not NA
       def AllDates(X):
             Y = generateNonsense(X)
+            
             temp = X.merge(Y, on='dates', how='right')
             temp = temp.drop(columns=['miles_y']).rename(
                   columns={'miles_x': 'miles'})
             temp['miles'] = pd.to_numeric(temp['miles'])
             temp['max_miles'] = temp['miles'].apply(lambda x: maxMiles(x))
             temp['miles'] = temp['miles'].fillna(0)
+            
             return temp
-
+            
       return AllDates(MTD)
 
 
+
 def milesRun(YEARVALUE=this_year):
+
       """
       Returns total # of miles run this year
       """
 
       output = frames(YEARVALUE=YEARVALUE)
+      
       return round(sum(output['miles']), 2)
+
 
 
 def plotYeah(YEARVALUE=this_year):
@@ -257,6 +304,8 @@ def plotYeah(YEARVALUE=this_year):
           return "Updated {}".format(today)
 
       dateForm = mdates.DateFormatter('%m-%d')
+
+      ###
 
       # ALL MILES
       plt.figure(figsize=(15, 6))
@@ -278,6 +327,8 @@ def plotYeah(YEARVALUE=this_year):
       plt.legend('')
       plt.savefig(f'./static/{YEARVALUE}/plots/MILES.png')
 
+      ###
+
       # BY MONTH
       plt.figure(figsize=(15, 6))
       sns.violinplot(data=output, x="month", y="miles", palette='Spectral')
@@ -285,9 +336,12 @@ def plotYeah(YEARVALUE=this_year):
       plt.ylabel('Miles Run')
       plt.savefig(f'./static/{YEARVALUE}/plots/MONTHS.png')
 
+      ###
+
       # BY DOW
       plt.figure(figsize=(15,6))
       sns.violinplot(data=output, x='DOW', y='miles', palette='Spectral')
       plt.xlabel('')
       plt.ylabel('Miles Run')
-      plt.savefig(f'./static/{YEARVALUE}/plots/DOW.png')
+      
+      plt.savefig(f'./static/{this_year}/plots/DOW.png')
