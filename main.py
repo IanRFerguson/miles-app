@@ -14,7 +14,11 @@ from helper import *
 
 app = Flask(__name__)
 sql_init()
-plotYeah()
+
+try:
+      plotYeah()
+except:
+      print("Still compiling miles to plot...")
 
 
 ##########
@@ -39,14 +43,16 @@ def sms():
 @app.route('/2021', methods=['GET', 'POST'])
 def miles_2021():
       sms = fetch_sms()
-      return render_template('miles_2021.html', sms=sms)
+      mtd = milesRun(YEARVALUE=2021)
+      return render_template('miles_2021.html', sms=sms, mtd=mtd)
 
 
 
 @app.route('/2022', methods=['GET', 'POST'])
 def miles_2022():
       sms = fetch_sms()
-      return render_template('miles_2022.html', sms=sms)
+      mtd = milesRun(YEARVALUE=2022)
+      return render_template('miles_2022.html', sms=sms, mtd=mtd)
 
 
 ##########
